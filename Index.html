@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=375px, initial-scale=1.0">
+  <title>Le Mur des Génies</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#7B2CBF',
+            secondary: '#F72585'
+          },
+          borderRadius: {
+            'button': '8px'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .post-enter {
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    #posts, #searchResults {
+      column-count: 2;
+      column-gap: 1rem;
+    }
+    #posts > div, #searchResults > div {
+      break-inside: avoid;
+      margin-bottom: 1rem;
+    }
+    .like-btn.liked {
+      color: #F72585;
+    }
+  </style>
+</head>
+<body class="w-[375px] min-h-[762px] bg-gray-50">
+  <!-- Barre de navigation supérieure -->
+  <nav class="fixed top-0 w-full bg-white shadow-sm z-50 px-4 py-3 flex items-center justify-between">
+    <div class="font-['Pacifico'] text-xl text-primary">Le Mur des Génies</div>
+    <button id="addPostBtn" class="bg-primary text-white px-4 py-2 !rounded-button flex items-center">
+      <i class="ri-add-line mr-1"></i>
+      Ajouter
+    </button>
+  </nav>
+
+  <!-- Section Accueil -->
+  <div id="homeSection" class="mt-16 mb-20 px-4">
+    <div class="flex overflow-x-auto py-4 gap-4 no-scrollbar">
+      <button class="bg-primary/10 text-primary px-4 py-2 !rounded-full whitespace-nowrap text-sm">Tous</button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 !rounded-full whitespace-nowrap text-sm">Sciences</button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 !rounded-full whitespace-nowrap text-sm">Histoire</button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 !rounded-full whitespace-nowrap text-sm">Maths</button>
+    </div>
+    <div id="posts" class="space-y-4"></div>
+  </div>
+
+  <!-- Section Recherche -->
+  <div id="searchSection" class="hidden mt-16 mb-20 px-4">
+    <div class="flex items-center mb-4">
+      <input type="text" id="searchInput" class="w-full border !rounded-lg p-3" placeholder="Rechercher une pépite...">
+      <button id="backBtn" class="ml-2 text-primary">
+        <i class="ri-arrow-left-line text-xl"></i>
+      </button>
+    </div>
+    <div id="searchResults" class="space-y-4"></div>
+  </div>
+
+  <!-- Modal d'ajout de post -->
+  <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white !rounded-lg p-4 w-[340px]">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-medium">Nouvelle pépite</h3>
+        <button id="closeModal" class="text-gray-500">
+          <i class="ri-close-line text-xl"></i>
+        </button>
+      </div>
+      <input type="file" accept="image/*" id="postImage" class="mb-4">
+      <div id="imagePreview" class="w-full h-48 mb-3 overflow-hidden !rounded-lg hidden">
+        <img id="previewImg" src="" alt="Prévisualisation" class="w-full h-full object-cover object-center">
+      </div>
+      <textarea id="postContent" class="w-full border !rounded-lg p-3 h-24 mb-4" placeholder="Partagez votre pépite de savoir (max 200 caractères)"></textarea>
+      <div id="errorMsg" class="text-red-500 text-sm mb-2 hidden">Le texte ne doit pas dépasser 200 caractères.</div>
+      <div class="flex justify-end">
+        <button id="submitPost" class="bg-primary text-white px-4 py-2 !rounded-button">Publier</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal pour texte complet -->
+  <div id="textModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white !rounded-lg p-4 w-[340px] max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-medium">Texte complet</h3>
+        <button id="closeTextModal" class="text-gray-500">
+          <i class="ri-close-line text-xl"></i>
+        </button>
+      </div>
+      <p id="fullText" class="text-sm text-gray-800"></p>
+    </div>
+  </div>
+
+  <!-- Barre de navigation inférieure -->
+  <div class="fixed bottom-0 w-full bg-white border-t">
+    <div class="grid grid-cols-2 gap-1">
+      <button id="homeBtn" class="flex flex-col items-center py-2 text-primary">
+        <div class="w-6 h-6 flex items-center justify-center">
+          <i class="ri-home-4-line"></i>
+        </div>
+        <span class="text-xs mt-1">Accueil</span>
+      </button>
+      <button id="searchBtn" class="flex flex-col items-center py-2 text-gray-400">
+        <div class="w-6 h-6 flex items-center justify-center">
+          <i class="ri-search-line"></i>
+        </div>
+        <span class="text-xs mt-1">Rechercher</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Données mock avec images associées
+    const mockPosts = [
+      {
+        id: 1,
+        content: "Les pieuvres ont trois cœurs : deux pour pomper le sang vers chaque branchie et un pour le reste du corps !",
+        author: "Fred",
+        likes: 42,
+        comments: 8,
+        subject: "Sciences",
+        timestamp: "Il y a 2h",
+        image: "https://example.com/image0.jpg" // Pieuvre tenant un cœur
+      },
+      {
+        id: 2,
+        content: "La Tour Eiffel peut grandir de 15 cm en été ! La chaleur fait dilater le métal.",
+        author: "Fred",
+        likes: 35,
+        comments: 5,
+        subject: "Sciences",
+        timestamp: "Il y a 3h",
+        image: "https://example.com/image1.jpg" // Tour Eiffel
+      },
+      {
+        id: 3,
+        content: "Le théorème de Pythagore était déjà connu des Babyloniens 1000 ans avant Pythagore !",
+        author: "Fred",
+        likes: 28,
+        comments: 3,
+        subject: "Maths",
+        timestamp: "Il y a 5h",
+        image: "https://example.com/image2.jpg" // Tablette de pierre gravée
+      }
+    ];
+
+    // Création d'un élément de post
+    function createPostElement(post) {
+      const postEl = document.createElement('div');
+      postEl.className = 'bg-white !rounded-lg p-4 shadow-sm post-enter';
+      postEl.innerHTML = `
+        <div class="flex items-center mb-3">
+          <div class="w-8 h-8 !rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <i class="ri-user-line"></i>
+          </div>
+          <div class="ml-2">
+            <div class="text-sm font-medium">${post.author}</div>
+            <div class="text-xs text-gray-500">${post.timestamp}</div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-800 mb-3">${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</p>
+        <div class="w-full h-48 mb-3 overflow-hidden !rounded-lg">
+          <img src="${post.image}" alt="Illustration de la pépite" class="w-full h-full object-cover object-center">
+        </div>
+        <div class="flex items-center justify-between text-sm text-gray-500">
+          <button class="flex items-center gap-1 like-btn" onclick="toggleLike(${post.id}, this)">
+            <i class="ri-heart-line"></i>
+            <span>${post.likes}</span>
+          </button>
+          <button class="flex items-center gap-1">
+            <i class="ri-chat-1-line"></i>
+            <span>${post.comments}</span>
+          </button>
+          <button class="flex items-center gap-1">
+            <i class="ri-share-line"></i>
+          </button>
+        </div>
+      `;
+      postEl.addEventListener('click', () => openTextModal(post.content));
+      return postEl;
+    }
+
+    // Affichage des posts
+    function renderPosts() {
+      const postsContainer = document.getElementById('posts');
+      postsContainer.innerHTML = '';
+      mockPosts.forEach(post => {
+        postsContainer.appendChild(createPostElement(post));
+      });
+    }
+
+    // Toggle des likes
+    function toggleLike(postId, btn) {
+      const post = mockPosts.find(p => p.id === postId);
+      if (post) {
+        post.likes += 1;
+        btn.querySelector('span').textContent = post.likes;
+        btn.classList.toggle('liked');
+        if (btn.classList.contains('liked')) {
+          btn.querySelector('i').classList.replace('ri-heart-line', 'ri-heart-fill');
+        } else {
+          btn.querySelector('i').classList.replace('ri-heart-fill', 'ri-heart-line');
+        }
+      }
+    }
+
+    // Gestion du modal d'ajout
+    const addModal = document.getElementById('addModal');
+    const addPostBtn = document.getElementById('addPostBtn');
+    const closeModal = document.getElementById('closeModal');
+    const submitPost = document.getElementById('submitPost');
+    const postContent = document.getElementById('postContent');
+    const postImage = document.getElementById('postImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const errorMsg = document.getElementById('errorMsg');
+
+    addPostBtn.addEventListener('click', () => {
+      addModal.classList.remove('hidden');
+      addModal.classList.add('flex');
+    });
+
+    closeModal.addEventListener('click', () => {
+      addModal.classList.add('hidden');
+      addModal.classList.remove('flex');
+    });
+
+    postImage.addEventListener('change', () => {
+      const file = postImage.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+          imagePreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        imagePreview.classList.add('hidden');
+      }
+    });
+
+    submitPost.addEventListener('click', () => {
+      const content = postContent.value.trim();
+      const file = postImage.files[0];
+      if (content.length > 200) {
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      if (content && file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const newPost = {
+            id: mockPosts.length + 1,
+            content,
+            author: "Fred",
+            likes: 0,
+            comments: 0,
+            subject: "Général",
+            timestamp: "À l'instant",
+            image: e.target.result
+          };
+          mockPosts.unshift(newPost);
+          renderPosts();
+          postContent.value = '';
+          postImage.value = '';
+          imagePreview.classList.add('hidden');
+          addModal.classList.add('hidden');
+          addModal.classList.remove('flex');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Veuillez ajouter du texte et une image.');
+      }
+    });
+
+    // Gestion du modal de texte complet
+    const textModal = document.getElementById('textModal');
+    const fullText = document.getElementById('fullText');
+    const closeTextModal = document.getElementById('closeTextModal');
+
+    function openTextModal(content) {
+      fullText.textContent = content;
+      textModal.classList.remove('hidden');
+      textModal.classList.add('flex');
+    }
+
+    closeTextModal.addEventListener('click', () => {
+      textModal.classList.add('hidden');
+      textModal.classList.remove('flex');
+    });
+
+    // Gestion de la navigation entre sections
+    const homeSection = document.getElementById('homeSection');
+    const searchSection = document.getElementById('searchSection');
+    const homeBtn = document.getElementById('homeBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    const backBtn = document.getElementById('backBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    function showHome() {
+      homeSection.classList.remove('hidden');
+      searchSection.classList.add('hidden');
+    }
+
+    function showSearch() {
+      homeSection.classList.add('hidden');
+      searchSection.classList.remove('hidden');
+    }
+
+    homeBtn.addEventListener('click', showHome);
+    searchBtn.addEventListener('click', showSearch);
+    backBtn.addEventListener('click', showHome);
+
+    // Fonctionnalité de recherche
+    searchInput.addEventListener('input', () => {
+      const searchTerm = searchInput.value.toLowerCase();
+      const filteredPosts = mockPosts.filter(post => post.content.toLowerCase().includes(searchTerm));
+      searchResults.innerHTML = '';
+      if (filteredPosts.length > 0) {
+        filteredPosts.forEach(post => {
+          searchResults.appendChild(createPostElement(post));
+        });
+      } else {
+        searchResults.innerHTML = '<p class="text-center text-gray-500">Aucune pépite trouvée</p>';
+      }
+    });
+
+    // Initialisation
+    renderPosts();
+  </script>
+</body>
+</html>
